@@ -5,7 +5,12 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    cors: {
+        origin: "*",  // Allow all origins for testing purposes, adjust for production
+        methods: ["GET", "POST"]
+    }
+});
 
 // Serve static files from 'public'
 app.use(express.static(path.join(__dirname, "public")));
@@ -40,6 +45,7 @@ io.on("connection", (socket) => {
     });
 });
 
+// Start server on port 3000
 server.listen(3000, () => {
     console.log("Server running at http://localhost:3000");
 });

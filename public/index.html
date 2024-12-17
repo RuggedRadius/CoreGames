@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiplayer Game</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- Use the CDN for Socket.io -->
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #f0f0f0; }
         canvas { display: block; background: #333; }
@@ -19,7 +20,7 @@
     <canvas id="gameCanvas"></canvas>
 
     <script>
-        const socket = io();
+        const socket = io("http://139.218.248.3:3000");
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const lobby = document.getElementById("lobby");
@@ -71,7 +72,6 @@
             // Emit the updated position to the server
             socket.emit("move", { x: players[playerId].x, y: players[playerId].y });
         }
-
 
         // Resize canvas to fill the screen
         function resizeCanvas() {
