@@ -13,7 +13,7 @@ class Player {
     }
   
     draw(ctx) {
-      ctx.drawImage(this.image, this.position.x, this.position.y, 100, 100);
+      ctx.drawImage(this.image, this.position.x, this.position.y, 256, 256);
 
       // Draw player name
       ctx.fillStyle = "white";
