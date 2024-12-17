@@ -1,0 +1,9 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent scrollbars */
+    height: 100%; /* Ensure the body fills the full viewport height */
+}
+canvas {
+    display: block; /* Remove extra spacing around canvas */
+}

@@ -7,32 +7,39 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files from the 'public' directory
+// Serve static files from 'public'
 app.use(express.static(path.join(__dirname, "public")));
 
-// Handle WebSocket connections
-let players = [];
+// Player data
+let players = {};
 
+// Handle WebSocket connections
 io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
 
+    // Initialize the player
     socket.on("join", (name) => {
-        if (players.length < 20) {
-            players.push({ id: socket.id, name });
-            io.emit("updatePlayers", players);
-        } else {
-            socket.emit("full", "Game is full!");
+        players[socket.id] = { id: socket.id, name, x: Math.random() * 500, y: Math.random() * 500 };
+        io.emit("updatePlayers", players); // Broadcast new player list
+    });
+
+    // Handle player movement
+    socket.on("move", (data) => {
+        if (players[socket.id]) {
+            players[socket.id].x = data.x;
+            players[socket.id].y = data.y;
+            io.emit("updatePlayers", players); // Update all players
         }
     });
 
+    // Handle disconnection
     socket.on("disconnect", () => {
-        players = players.filter((p) => p.id !== socket.id);
+        delete players[socket.id];
         io.emit("updatePlayers", players);
         console.log("A user disconnected:", socket.id);
     });
 });
 
-// Start the server
 server.listen(3000, () => {
-    console.log("Server is running on http://localhost:3000");
+    console.log("Server running at http://localhost:3000");
 });

@@ -6,54 +6,107 @@
     <title>Multiplayer Game</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; }
-        #game { display: none; }
+        body { margin: 0; overflow: hidden; background: #f0f0f0; }
+        canvas { display: block; background: #333; }
+        #lobby { position: absolute; top: 20px; left: 20px; z-index: 10; }
     </style>
 </head>
 <body>
     <div id="lobby">
-        <h1>Welcome to the Game</h1>
         <input id="nameInput" placeholder="Enter your name">
         <button id="joinBtn">Join</button>
-        <p id="error" style="color:red;"></p>
     </div>
-    <div id="game">
-        <h1>Players:</h1>
-        <ul id="playerList"></ul>
-    </div>
+    <canvas id="gameCanvas"></canvas>
+
     <script>
         const socket = io();
-
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
         const lobby = document.getElementById("lobby");
-        const game = document.getElementById("game");
         const nameInput = document.getElementById("nameInput");
         const joinBtn = document.getElementById("joinBtn");
-        const error = document.getElementById("error");
-        const playerList = document.getElementById("playerList");
 
+        let playerId = null;
+        let players = {}; // Store all players
+        const keysPressed = {}; // Track keys currently pressed
+        const speed = 5; // Movement speed
+
+        // Join the game
         joinBtn.addEventListener("click", () => {
             const name = nameInput.value.trim();
             if (name) {
                 socket.emit("join", name);
-            } else {
-                error.textContent = "Name cannot be empty!";
+                lobby.style.display = "none";
+
+                // Initialize player locally for testing
+                players[socket.id] = { x: 100, y: 100, name: name };
             }
         });
 
-        socket.on("updatePlayers", (players) => {
-            lobby.style.display = "none";
-            game.style.display = "block";
-            playerList.innerHTML = "";
-            players.forEach(player => {
-                const li = document.createElement("li");
-                li.textContent = player.name;
-                playerList.appendChild(li);
-            });
+        // Update players data
+        socket.on("updatePlayers", (serverPlayers) => {
+            players = serverPlayers;
+            playerId = socket.id;
         });
 
-        socket.on("full", (message) => {
-            error.textContent = message;
+        // Handle key states
+        window.addEventListener("keydown", (e) => {
+            keysPressed[e.key] = true;
         });
+
+        window.addEventListener("keyup", (e) => {
+            keysPressed[e.key] = false;
+        });
+
+        // Update player movement based on key states
+        function updatePlayerMovement() {
+            if (!players[playerId]) return;
+
+            // Movement logic
+            if (keysPressed["ArrowUp"] && players[playerId].y > 20) players[playerId].y -= speed;
+            if (keysPressed["ArrowDown"] && players[playerId].y < canvas.height - 20) players[playerId].y += speed;
+            if (keysPressed["ArrowLeft"] && players[playerId].x > 20) players[playerId].x -= speed;
+            if (keysPressed["ArrowRight"] && players[playerId].x < canvas.width - 20) players[playerId].x += speed;
+
+            // Emit the updated position to the server
+            socket.emit("move", { x: players[playerId].x, y: players[playerId].y });
+        }
+
+
+        // Resize canvas to fill the screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener("load", resizeCanvas);
+        window.addEventListener("resize", resizeCanvas);
+
+        // Render loop
+        function render() {
+            updatePlayerMovement(); // Update player movement
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            // Draw all players
+            for (let id in players) {
+                const player = players[id];
+                ctx.fillStyle = id === playerId ? "blue" : "green"; // Highlight current player
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw player name
+                ctx.fillStyle = "white";
+                ctx.font = "12px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(player.name, player.x, player.y - 25);
+            }
+
+            requestAnimationFrame(render); // Continue rendering
+        }
+
+        render();
     </script>
 </body>
 </html>
