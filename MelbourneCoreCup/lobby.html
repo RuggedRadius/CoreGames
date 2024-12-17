@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Game</title>
+    <!-- Use the CDN for Socket.io -->
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="background.js"></script>
+    <script src="player.js"></script>
+    <script src="gamescene.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #f0f0f0; }
+        canvas { display: block; background: #333; }
+        #lobby { position: absolute; top: 20px; left: 20px; z-index: 10; }
+    </style>
+</head>
+<body>
+    <h1>Enter Your Name</h1>
+    <form id="lobbyForm">
+      <input type="text" id="nameInput" placeholder="Enter your name" required />
+      <button type="submit" id="joinBtn">Join Game</button>
+    </form>
+    <p id="error" style="color: red;"></p>
+    
+    <script>
+        //const socket = io("http://localhost:8080");
+        const lobby = document.getElementById('lobbyForm');
+        const nameInput = document.getElementById("nameInput");
+        const joinBtn = document.getElementById("joinBtn");
+        const errorDisplay = document.getElementById('error');
+
+        let playerId = null;
+        let players = {}; // Store all players
+        const keysPressed = {}; // Track keys currently pressed
+        const speed = 5; // Movement speed
+
+        // Join the game
+        //*joinBtn.addEventListener("click", () => {
+            /*const name = nameInput.value.trim();
+            if (name) {
+                socket.emit("join", name);
+                lobby.style.display = "none";
+
+                // Initialize player locally for testing
+                players[socket.id] = { x: 100, y: 100, name: name };
+            }*/
+        //});
+
+        // Update players data
+        //socket.on("updatePlayers", (serverPlayers) => {
+         //   players = serverPlayers;
+        //    playerId = socket.id;
+        //});
+
+        const ws = new WebSocket('ws://localhost:8080'); // Replace with your WebSocket server URL
+
+        form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const playerName = document.getElementById('nameInput').value.trim();
+
+        if (playerName) {
+            // Send the player's name to the server
+            ws.send(JSON.stringify({ type: 'join', name: playerName }));
+
+            ws.onmessage = (message) => {
+            const response = JSON.parse(message.data);
+
+            if (response.status === 'success') {
+                // Redirect to game.html with the player's name
+                window.location.href = `index.html?name=${encodeURIComponent(playerName)}`;
+            } else {
+                // Display error from server
+                errorDisplay.textContent = response.error || 'Unable to join the game.';
+            }
+            };
+
+            ws.onerror = () => {
+            errorDisplay.textContent = 'Connection error. Please try again later.';
+            };
+        } else {
+            errorDisplay.textContent = 'Please enter a valid name.';
+        }
+        });
+    </script>
+</body>
+</html>

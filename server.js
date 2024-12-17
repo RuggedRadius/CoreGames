@@ -21,10 +21,20 @@ let players = {};
 // Handle WebSocket connections
 io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
+    
+    socket.emit(JSON.stringify({ status: 'success', message: 'Welcome to the game!' }));
 
     // Initialize the player
     socket.on("join", (name) => {
-        players[socket.id] = { id: socket.id, name, x: Math.random() * 500, y: Math.random() * 500 };
+        players[socket.id] = 
+        { 
+            id: socket.id, 
+            name, 
+            speed: Math.random() * 2 + 1,
+            x: Math.random() * 500, 
+            y: Math.random() * 500 
+        };
+
         io.emit("updatePlayers", players); // Broadcast new player list
     });
 
@@ -46,6 +56,6 @@ io.on("connection", (socket) => {
 });
 
 // Start server on port 3000
-server.listen(3000, () => {
-    console.log("Server running at http://localhost:3000");
+server.listen(8080, () => {
+    console.log("Server running at http://localhost:8080"); // http://localhost:3000
 });

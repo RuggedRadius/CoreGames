@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Game</title>
+    <!-- Use the CDN for Socket.io -->
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="background.js"></script>
+    <script src="player.js"></script>
+    <script src="gamescene.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #f0f0f0; }
+        canvas { display: block; background: #333; }
+        #lobby { position: absolute; top: 20px; left: 20px; z-index: 10; }
+    </style>
+</head>
+<body>
+    <div id="lobby">
+        <input id="nameInput" placeholder="Enter your name">
+        <button id="joinBtn">Join</button>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const socket = io("localhost:8080"); // http://139.218.248.3:3000
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const lobby = document.getElementById("lobby");
+        const nameInput = document.getElementById("nameInput");
+        const joinBtn = document.getElementById("joinBtn");
+
+        let playerId = null;
+        let players = {}; // Store all players
+        const keysPressed = {}; // Track keys currently pressed
+        const speed = 5; // Movement speed
+
+        // Join the game
+        joinBtn.addEventListener("click", () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                socket.emit("join", name);
+                lobby.style.display = "none";
+
+                // Initialize player locally for testing
+                players[socket.id] = { x: 100, y: 100, name: name };
+            }
+        });
+
+        // Update players data
+        socket.on("updatePlayers", (serverPlayers) => {
+            players = serverPlayers;
+            playerId = socket.id;
+        });
+
+        // Handle key states
+        window.addEventListener("keydown", (e) => {
+            keysPressed[e.key] = true;
+        });
+
+        window.addEventListener("keyup", (e) => {
+            keysPressed[e.key] = false;
+        });
+
+        // Update player movement based on key states
+        function updatePlayerMovement() {
+            if (!players[playerId]) return;
+
+            // Movement logic
+            if (keysPressed["ArrowUp"] && players[playerId].y > 20) players[playerId].y -= speed;
+            if (keysPressed["ArrowDown"] && players[playerId].y < canvas.height - 20) players[playerId].y += speed;
+            if (keysPressed["ArrowLeft"] && players[playerId].x > 20) players[playerId].x -= speed;
+            if (keysPressed["ArrowRight"] && players[playerId].x < canvas.width - 20) players[playerId].x += speed;
+
+            // Emit the updated position to the server
+            socket.emit("move", { x: players[playerId].x, y: players[playerId].y });
+        }
+
+        // Resize canvas to fill the screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener("load", resizeCanvas);
+        window.addEventListener("resize", resizeCanvas);
+
+        const gameScene = new GameScene(canvas);
+        gameScene.start();
+    </script>
+</body>
+</html>
